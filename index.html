@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fay e o Reino das Fadas Perdidas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#f4ecff;
+    --dim: rgba(244,236,255,.66);
+    --gold:#ffd166;
+    --pink:#ff7fb0;
+    --teal:#7fe3d1;
+    --deep:#160b28;
+    --panel:#221238;
+    --panel-edge:#3d2266;
+    --danger:#ff5d73;
+    --ok:#8ff0b0;
+    font-size: 16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:var(--deep);
+    color:var(--ink);
+    font-family:'VT323', monospace;
+    image-rendering: pixelated;
+    overflow:hidden;
+  }
+  #root{
+    position:relative;
+    width:100%;
+    height:100vh;
+    min-height:560px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .stage{
+    position:relative;
+    width:100%;
+    max-width:720px;
+    height:100%;
+    max-height:880px;
+    display:flex;
+    flex-direction:column;
+    background:linear-gradient(180deg,var(--scene-a,#241238),var(--scene-b,#120a20));
+    border:4px solid #000;
+    box-shadow:
+      0 0 0 3px var(--panel-edge),
+      0 0 0 6px #000,
+      inset 0 0 60px rgba(0,0,0,.55);
+    overflow:hidden;
+    transition:background 900ms ease;
+  }
+
+  /* ---------- ambient particles ---------- */
+  .sparks{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+  .spark{
+    position:absolute; width:3px;height:3px; background:var(--gold);
+    box-shadow:0 0 6px 1px var(--gold);
+    animation:float 6s ease-in-out infinite;
+    opacity:.85;
+  }
+  @keyframes float{
+    0%{ transform:translateY(0) translateX(0); opacity:.2;}
+    50%{ opacity:1;}
+    100%{ transform:translateY(-140px) translateX(18px); opacity:0;}
+  }
+
+  /* ---------- top HUD ---------- */
+  .hud{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 14px;
+    background:rgba(0,0,0,.35);
+    border-bottom:3px solid #000;
+    z-index:5;
+    flex:0 0 auto;
+    gap:8px;
+  }
+  .hud-title{
+    font-family:'Press Start 2P', monospace;
+    font-size:.55rem;
+    color:var(--gold);
+    letter-spacing:.5px;
+    line-height:1.4;
+  }
+  .hearts{display:flex; gap:6px;}
+  .pixel{ image-rendering: pixelated; position:relative; }
+  .heart-icon{ width:18px; height:16px; }
+  .progress-dots{ display:flex; gap:6px; align-items:center; }
+  .pdot{
+    width:11px; height:11px; border:2px solid #000;
+    background:#3d2266;
+    box-shadow:0 0 0 1px var(--panel-edge);
+  }
+  .pdot.done{ background:var(--teal); box-shadow:0 0 0 1px var(--panel-edge), 0 0 6px var(--teal);}
+  .pdot.current{ background:var(--gold); box-shadow:0 0 0 1px var(--panel-edge), 0 0 8px var(--gold);}
+
+  /* ---------- main content ---------- */
+  .content{
+    flex:1 1 auto;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-end;
+    position:relative;
+    padding:14px 16px 0;
+    overflow-y:auto;
+    z-index:2;
+  }
+
+  .fairy-wrap{
+    position:relative;
+    width:120px; height:150px;
+    margin:6px auto 4px;
+    flex:0 0 auto;
+    animation: bob 2.6s ease-in-out infinite;
+  }
+  @keyframes bob{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
+  .wing{
+    position:absolute; top:38px; width:46px; height:56px;
+    background: radial-gradient(ellipse at 50% 40%, rgba(143,240,217,.85), rgba(143,240,217,.15) 70%, transparent 75%);
+    border-radius:50% 50% 50% 50%/60% 60% 40% 40%;
+    filter: drop-shadow(0 0 6px rgba(143,240,217,.6));
+    animation: flap 260ms ease-in-out infinite alternate;
+  }
+  .wing.left{ left:2px; transform-origin:right center; }
+  .wing.right{ right:2px; transform-origin:left center; }
+  @keyframes flap{ from{ transform:scaleX(1) rotate(-6deg);} to{ transform:scaleX(.82) rotate(6deg);} }
+  .fairy-body{
+    position:absolute; left:50%; top:18px; transform:translateX(-50%);
+    width:36px; height:44px;
+  }
+  .fairy-glow{
+    position:absolute; left:50%; bottom:-6px; transform:translateX(-50%);
+    width:60px; height:14px; border-radius:50%;
+    background:radial-gradient(ellipse, rgba(255,209,102,.55), transparent 70%);
+    filter:blur(2px);
+  }
+
+  .speech{
+    background:var(--panel);
+    border:3px solid #000;
+    box-shadow:0 0 0 2px var(--panel-edge);
+    padding:14px 16px;
+    width:100%;
+    max-width:560px;
+    margin:10px 0 14px;
+    position:relative;
+    font-size:1.32rem;
+    line-height:1.4;
+    flex:0 0 auto;
+  }
+  .speech .label{
+    font-family:'Press Start 2P', monospace;
+    font-size:.5rem;
+    color:var(--teal);
+    display:block;
+    margin-bottom:8px;
+    letter-spacing:.5px;
+  }
+  .speech.danger .label{ color:var(--danger); }
+  .speech.ok .label{ color:var(--ok); }
+
+  .options{
+    display:flex; flex-direction:column; gap:10px;
+    width:100%; max-width:560px; margin-bottom:16px; flex:0 0 auto;
+  }
+  button.opt{
+    font-family:'VT323', monospace;
+    font-size:1.28rem;
+    background:#2a1746;
+    color:var(--ink);
+    border:3px solid #000;
+    box-shadow:0 0 0 2px var(--panel-edge), 3px 3px 0 rgba(0,0,0,.5);
+    padding:11px 14px;
+    text-align:left;
+    cursor:pointer;
+    transition:transform 80ms ease, background 120ms ease;
+  }
+  button.opt:hover:not(:disabled){ background:#3a2262; transform:translate(-1px,-1px); box-shadow:0 0 0 2px var(--gold), 4px 4px 0 rgba(0,0,0,.5);}
+  button.opt:active:not(:disabled){ transform:translate(1px,1px); box-shadow:0 0 0 2px var(--panel-edge), 1px 1px 0 rgba(0,0,0,.5); }
+  button.opt:disabled{ cursor:default; opacity:.55; }
+  button.opt.correct{ background:#1c4d3a; box-shadow:0 0 0 2px var(--ok), 3px 3px 0 rgba(0,0,0,.5); opacity:1; }
+  button.opt.wrong{ background:#5a1c2b; box-shadow:0 0 0 2px var(--danger), 3px 3px 0 rgba(0,0,0,.5); opacity:1; animation: shake 320ms; }
+  @keyframes shake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
+
+  .cta-row{ display:flex; justify-content:center; padding-bottom:18px; flex:0 0 auto; }
+  button.cta{
+    font-family:'Press Start 2P', monospace;
+    font-size:.68rem;
+    background:linear-gradient(180deg,var(--gold),#e2a52e);
+    color:#2b1500;
+    border:3px solid #000;
+    box-shadow:0 0 0 2px #7a5411, 3px 3px 0 rgba(0,0,0,.6);
+    padding:13px 20px;
+    cursor:pointer;
+    letter-spacing:.5px;
+  }
+  button.cta:hover{ filter:brightness(1.08); transform:translate(-1px,-1px); }
+  button.cta:active{ transform:translate(1px,1px); }
+  button.cta.ghost{
+    background:transparent; color:var(--teal);
+    box-shadow:0 0 0 2px var(--teal), 3px 3px 0 rgba(0,0,0,.6);
+  }
+
+  h1.title{
+    font-family:'Press Start 2P', monospace;
+    font-size:1.2rem;
+    color:var(--gold);
+    text-align:center;
+    text-shadow:3px 3px 0 #000;
+    line-height:1.7;
+    margin:6px 0 2px;
+  }
+  h2.phase-title{
+    font-family:'Press Start 2P', monospace;
+    font-size:.72rem;
+    color:var(--teal);
+    text-align:center;
+    line-height:1.8;
+    margin:4px 0 10px;
+    text-shadow:2px 2px 0 #000;
+  }
+  p.lede{
+    text-align:center; font-size:1.3rem; color:var(--dim);
+    max-width:520px; margin:0 auto 14px; line-height:1.4;
+  }
+  .stars-row{ display:flex; gap:8px; justify-content:center; margin:10px 0; }
+  .star{ width:22px; height:20px; }
+
+  .scene-deco{ position:absolute; inset:0; pointer-events:none; z-index:1; }
+
+  ::-webkit-scrollbar{ width:8px; }
+  ::-webkit-scrollbar-thumb{ background:var(--panel-edge); }
+
+  @media (max-width:420px){
+    .stage{ max-width:100%; border-width:3px; }
+    h1.title{ font-size:.95rem; }
+    .speech{ font-size:1.15rem; }
+  }
+</style>
+</head>
+<body>
+<div id="root"><div class="stage" id="stage">
+  <div class="sparks" id="sparks"></div>
+  <div class="scene-deco" id="sceneDeco"></div>
+  <div class="hud" id="hud" style="display:none;">
+    <div class="hud-title">FAY &amp; O REINO<br>DAS FADAS</div>
+    <div class="progress-dots" id="progressDots"></div>
+    <div class="hearts" id="hearts"></div>
+  </div>
+  <div class="content" id="content"></div>
+</div></div>
+
+<script>
+/* ================= PIXEL SPRITES (drawn with box-shadow "pixels") ================= */
+function pixelDiv(rows, colorMap, size){
+  const w = rows[0].length, h = rows.length;
+  const shadows = [];
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      const ch = rows[y][x];
+      if(ch !== '.' && colorMap[ch]){
+        shadows.push(`${x*size}px ${y*size}px 0 0 ${colorMap[ch]}`);
+      }
+    }
+  }
+  const el = document.createElement('div');
+  el.className = 'pixel';
+  el.style.width = size+'px';
+  el.style.height = size+'px';
+  el.style.boxShadow = shadows.join(',');
+  return el;
+}
+
+const FAIRY_ROWS = [
+  "...ooo...",
+  "..ohhho..",
+  "..ohhho..",
+  ".osseeso.",
+  ".osssso..",
+  "..oddo...",
+  ".odddoo..",
+  "oddddddo.",
+  "oppppppo.",
+  ".o.ss.o..",
+  ".oo..oo.."
+];
+const FAIRY_COLORS = { o:'#2b1339', h:'#ffd166', s:'#ffd9b3', e:'#2b1339', d:'#ff7fb0', p:'#e0447a' };
+
+const HEART_ROWS = [
+  ".oo.oo.",
+  "osssoss",
+  "sssssss",
+  ".sssss.",
+  "..sss..",
+  "...s..."
+];
+function heartColors(full){ return { o:'#000', s: full ? '#ff5d73' : '#3d2266' }; }
+
+const STAR_ROWS = [
+  "..s..",
+  ".sss.",
+  "sssss",
+  ".sss.",
+  "s.s.s"
+];
+function starColors(full){ return { s: full ? '#ffd166' : '#3d2266' }; }
+
+function buildFairy(){
+  const wrap = document.createElement('div');
+  wrap.className = 'fairy-wrap';
+  wrap.innerHTML = '<div class="wing left"></div><div class="wing right"></div><div class="fairy-glow"></div>';
+  const body = document.createElement('div');
+  body.className = 'fairy-body';
+  body.appendChild(pixelDiv(FAIRY_ROWS, FAIRY_COLORS, 4));
+  wrap.appendChild(body);
+  return wrap;
+}
+
+/* ================= GAME DATA ================= */
+const PHASES = [
+{
+  id:1, key:'bridge',
+  scene:['#2a2350','#12233a'],
+  title:'Fase 1', name:'As Pontes Suspensas do Vale dos Cogumelos',
+  intro:'A névoa da Erro-pólis cobre o vale e a ponte range sob os pés de Fay. Só a tábua com a pontuação certa acende a magia da travessia. Dispare sua varinha na tábua correta!',
+  challenges:[
+    {
+      prompt:'Primeira tábua: qual delas está com a pontuação certa?',
+      options:[
+        {text:'A fada voadora, encontrou o caminho correto.', correct:false},
+        {text:'A fada voadora encontrou o caminho correto.', correct:true}
+      ],
+      explain:'Nunca se separa o sujeito do verbo com vírgula! "A fada voadora" é o sujeito de "encontrou" — eles ficam juntos, sem pausa.'
+    },
+    {
+      prompt:'A névoa muda de forma... escolha a tábua certa:',
+      options:[
+        {text:'Naquela noite escura a floresta parecia calma.', correct:false},
+        {text:'Naquela noite escura, a floresta parecia calma.', correct:true}
+      ],
+      explain:'Quando o adjunto adverbial vem deslocado para o início da frase ("Naquela noite escura"), ele deve vir seguido de vírgula.'
+    }
+  ]
+},
+{
+  id:2, key:'tree',
+  scene:['#3a2a12','#1a1206'],
+  title:'Fase 2', name:'O Guardião da Árvore Anciã',
+  intro:'Um Tronco Ancião guarda um portal trancado. Ele só libera a passagem se você energizar as orbes certas, aplicando a regra do "Vou A, volto DA" / "AO".',
+  challenges:[
+    {
+      prompt:'Enigma da orbe: "Fay precisa dar acesso ___ magia do bosque."\nDica: troque por uma palavra masculina, como "conhecimento" → "acesso ao conhecimento".',
+      options:[
+        {text:'a magia', correct:false},
+        {text:'à magia', correct:true}
+      ],
+      explain:'Se ao trocar por uma palavra masculina aparece "ao" (dar acesso AO conhecimento), então no feminino existe crase: "dar acesso À magia".'
+    },
+    {
+      prompt:'Três alavancas aparecem no portal. Puxe a única SEM erro de crase:',
+      options:[
+        {text:'Chegamos à partir das oito horas.', correct:false},
+        {text:'Entreguei o mapa à ela.', correct:false},
+        {text:'A fada ofereceu ajuda a todos os duendes.', correct:true}
+      ],
+      explain:'Nunca há crase antes de verbo ("a partir de") nem antes de pronome pessoal ("a ela"). A alavanca 3 está correta: sem crase antes de palavra masculina/pronome indefinido.'
+    }
+  ]
+},
+{
+  id:3, key:'labyrinth', boss:true,
+  scene:['#12303a','#081018'],
+  title:'Fase 3', name:'O Labirinto dos Cristais de Luz',
+  intro:'Um labirinto de espelhos surge diante de Fay. As saídas só se abrem com a frase mágica completa. No fim, o temido Espectro do Anacoluto espera para o combate final.',
+  challenges:[
+    {
+      prompt:'Portal dos Porquês: "Fay não sabe _____ a floresta mudou."',
+      options:[
+        {text:'porque', correct:false},
+        {text:'por que', correct:true},
+        {text:'por quê', correct:false}
+      ],
+      explain:'"Por que" (separado, sem acento) é usado para perguntas indiretas — no sentido de "o motivo pelo qual".'
+    },
+    {
+      prompt:'Fonte do Tempo: "____ muitos anos, o reino das fadas está isolado."',
+      options:[
+        {text:'Á', correct:false},
+        {text:'A', correct:false},
+        {text:'Há', correct:true}
+      ],
+      explain:'"Há" (verbo haver) indica tempo decorrido/passado — "há muitos anos" = faz muitos anos.'
+    },
+    {
+      prompt:'Encruzilhada dos Duendes: "____ precisa encontrar a saída rápida."',
+      options:[
+        {text:'Agente', correct:false},
+        {text:'A gente', correct:true}
+      ],
+      explain:'"A gente" (separado) substitui "nós". "Agente" (junto) é outra palavra — significa uma pessoa que representa algo ou alguém, como um agente secreto.'
+    }
+  ],
+  bossChallenge:{
+    name:'O Espectro do Anacoluto',
+    prompt:'O chefe lança um feitiço de texto confuso:\n\n"Cheguei até à borda do rio!"\n\nEscolha o contra-feitiço certo:',
+    options:[
+      {text:'Errado! A crase depois de "até" nunca pode ser usada.', correct:false},
+      {text:'Correto! A crase depois de "até" é facultativa.', correct:true}
+    ],
+    explain:'Depois da preposição "até", o uso da crase é facultativo — as duas formas ("até a borda" e "até à borda") são aceitas. O feitiço é rebatido com sucesso!'
+  }
+},
+{
+  id:4, key:'cave',
+  scene:['#26123a','#0d0616'],
+  title:'Fase 4', name:'A Caverna dos Ecos',
+  intro:'Ecos sombrios repetem frases poluídas por vícios de linguagem. Fay precisa lançar o Feitiço da Concisão para limpar o excesso de palavras e destravar a passagem.',
+  challenges:[
+    {
+      prompt:'Eco da Caverna (Pleonasmo Vicioso): "Para encontrar a saída, Fay precisa subir para cima da montanha!"\nEscolha a versão sem redundância:',
+      options:[
+        {text:'subir para cima da montanha', correct:false},
+        {text:'subir a montanha', correct:true},
+        {text:'subir em cima da montanha', correct:false}
+      ],
+      explain:'"Subir" já indica movimento para cima — dizer "subir para cima" é redundante (pleonasmo vicioso). O certo é apenas "subir a montanha".'
+    },
+    {
+      prompt:'Eco da Caverna (Queísmo): "A luz que ilumina a flor que brilha na pedra que abre o portal."\nEscolha a construção mais direta:',
+      options:[
+        {text:'A luz que ilumina a flor que brilha na pedra que abre o portal que existe.', correct:false},
+        {text:'A luz iluminando a flor brilhante na pedra para abrir o portal.', correct:true},
+        {text:'A luz que ilumina a flor que brilha na pedra que existe que abre o portal.', correct:false}
+      ],
+      explain:'O excesso de "que" (queísmo) polui a frase. Trocar as orações por construções diretas — adjetivos e verbos no gerúndio/infinitivo — deixa o texto limpo.'
+    },
+    {
+      prompt:'Eco da Caverna (Ambiguidade): "O duende falou com o guardião sobre o seu segredo." (De quem é o segredo?)\nEscolha a versão sem duplo sentido:',
+      options:[
+        {text:'O duende contou ao guardião sobre seu segredo.', correct:false},
+        {text:'O duende revelou o próprio segredo ao guardião.', correct:true}
+      ],
+      explain:'"Seu" pode se referir ao duende ou ao guardião — isso é ambiguidade. Usar "o próprio segredo" deixa claro que o segredo é do duende.'
+    }
+  ]
+},
+{
+  id:5, key:'swamp',
+  scene:['#1a3020','#0a160e'],
+  title:'Fase 5', name:'O Pântano da Grafia Confusa',
+  intro:'Pedras flutuantes brilham sobre o pântano — mas afundam se Fay pisar na palavra errada. Escolha a grafia certa em cada travessia.',
+  challenges:[
+    {
+      prompt:'Travessia 1: "Fay quer atravessar, ___ o pântano está traiçoeiro."',
+      options:[
+        {text:'mais', correct:false},
+        {text:'mas', correct:true}
+      ],
+      explain:'"Mas" indica oposição (=porém). "Mais" indica quantidade. Aqui a ideia é de oposição, então: "mas".'
+    },
+    {
+      prompt:'Travessia 2: "Fay seguiu em frente ___ encontrar o reino das fadas."',
+      options:[
+        {text:'afim de', correct:false},
+        {text:'a fim de', correct:true}
+      ],
+      explain:'"A fim de" (separado) indica intenção/objetivo — "com o fim de". "Afim" (junto) indica afinidade ou semelhança.'
+    },
+    {
+      prompt:'Travessia 3: "___, este caminho é o mais seguro."',
+      options:[
+        {text:'Ao meu ver', correct:false},
+        {text:'A meu ver', correct:true}
+      ],
+      explain:'A expressão formal correta é "a meu ver" — sem o artigo "o" no início.'
+    },
+    {
+      prompt:'Travessia 4: "___ atravessar o pântano, Fay decidiu contornar pela trilha alta."',
+      options:[
+        {text:'Ao invés de', correct:false},
+        {text:'Em vez de', correct:true}
+      ],
+      explain:'"Em vez de" significa "no lugar de" — é a forma mais abrangente e correta aqui. "Ao invés de" só vale para uma oposição absoluta de sentidos.'
+    },
+    {
+      prompt:'Travessia 5: "Fay ___ pisou na primeira pedra, sentiu o chão tremer."',
+      options:[
+        {text:'mau', correct:false},
+        {text:'mal', correct:true}
+      ],
+      explain:'"Mal" é o oposto de "bem" (aqui com sentido de "assim que"). "Mau" é o oposto de "bom" e descreve substantivos, como "um mau cheiro".'
+    }
+  ]
+}
+];
+
+/* ================= STATE ================= */
+const state = {
+  screen:'title', // title | intro | challenge | boss | phaseEnd | victory
+  phaseIdx:0,
+  challengeIdx:0,
+  hearts:3,
+  mistakesThisPhase:0,
+  answeredWrongOnce:false
+};
+
+const content = document.getElementById('content');
+const stage = document.getElementById('stage');
+const hud = document.getElementById('hud');
+const heartsEl = document.getElementById('hearts');
+const dotsEl = document.getElementById('progressDots');
+const sparksEl = document.getElementById('sparks');
+
+function setScene(colors){
+  stage.style.setProperty('--scene-a', colors[0]);
+  stage.style.setProperty('--scene-b', colors[1]);
+}
+
+function renderHearts(){
+  heartsEl.innerHTML = '';
+  for(let i=0;i<3;i++){
+    const full = i < state.hearts;
+    const h = pixelDiv(HEART_ROWS, heartColors(full), 2.4);
+    h.classList.add('heart-icon');
+    heartsEl.appendChild(h);
+  }
+}
+function renderDots(){
+  dotsEl.innerHTML='';
+  PHASES.forEach((p,i)=>{
+    const d = document.createElement('div');
+    d.className = 'pdot' + (i < state.phaseIdx ? ' done' : (i === state.phaseIdx ? ' current' : ''));
+    dotsEl.appendChild(d);
+  });
+}
+function spawnSparks(){
+  sparksEl.innerHTML='';
+  const n = 14;
+  for(let i=0;i<n;i++){
+    const s = document.createElement('div');
+    s.className='spark';
+    s.style.left = (Math.random()*100)+'%';
+    s.style.top = (60+Math.random()*35)+'%';
+    s.style.animationDelay = (Math.random()*6)+'s';
+    s.style.animationDuration = (4+Math.random()*4)+'s';
+    sparksEl.appendChild(s);
+  }
+}
+
+function clear(el){ el.innerHTML=''; }
+
+/* ---------- TITLE ---------- */
+function renderTitle(){
+  hud.style.display='none';
+  setScene(['#2a1550','#0e0620']);
+  spawnSparks();
+  clear(content);
+  content.style.justifyContent='center';
+
+  const h1 = document.createElement('h1');
+  h1.className='title';
+  h1.innerText = 'FAY E O REINO\nDAS FADAS PERDIDAS';
+  h1.style.whiteSpace='pre-line';
+
+  const lede = document.createElement('p');
+  lede.className='lede';
+  lede.innerText = 'Fay se perdeu na Floresta Encantada. Para chegar ao Reino Mágico das Fadas, ela precisa vencer 5 desafios de gramática espalhados pelo caminho. Você a ajuda?';
+
+  const fairy = buildFairy();
+  fairy.style.transform = 'scale(1.3)';
+  fairy.style.margin = '10px auto 14px';
+
+  const row = document.createElement('div');
+  row.className='cta-row';
+  const btn = document.createElement('button');
+  btn.className='cta';
+  btn.innerText = 'Começar Jornada';
+  btn.onclick = ()=>{ state.screen='intro'; render(); };
+  row.appendChild(btn);
+
+  content.appendChild(h1);
+  content.appendChild(fairy);
+  content.appendChild(lede);
+  content.appendChild(row);
+}
+
+/* ---------- PHASE INTRO ---------- */
+function renderIntro(){
+  const phase = PHASES[state.phaseIdx];
+  hud.style.display='flex';
+  setScene(phase.scene);
+  spawnSparks();
+  renderHearts();
+  renderDots();
+  clear(content);
+  content.style.justifyContent='center';
+
+  const h2 = document.createElement('h2');
+  h2.className='phase-title';
+  h2.innerText = phase.title.toUpperCase() + '\n' + phase.name;
+  h2.style.whiteSpace='pre-line';
+
+  const fairy = buildFairy();
+
+  const speech = document.createElement('div');
+  speech.className='speech';
+  speech.innerHTML = '<span class="label">✦ HISTÓRIA</span>';
+  const p = document.createElement('div');
+  p.innerText = phase.intro;
+  speech.appendChild(p);
+
+  const row = document.createElement('div');
+  row.className='cta-row';
+  const btn = document.createElement('button');
+  btn.className='cta';
+  btn.innerText='Avançar';
+  btn.onclick = ()=>{
+    state.challengeIdx = 0;
+    state.mistakesThisPhase = 0;
+    state.hearts = 3;
+    state.screen = 'challenge';
+    render();
+  };
+  row.appendChild(btn);
+
+  content.appendChild(h2);
+  content.appendChild(fairy);
+  content.appendChild(speech);
+  content.appendChild(row);
+}
+
+/* ---------- CHALLENGE ---------- */
+function renderChallenge(){
+  const phase = PHASES[state.phaseIdx];
+  const isBoss = state.screen === 'boss';
+  const challenge = isBoss ? phase.bossChallenge : phase.challenges[state.challengeIdx];
+
+  hud.style.display='flex';
+  setScene(phase.scene);
+  renderHearts();
+  renderDots();
+  clear(content);
+  content.style.justifyContent='flex-end';
+  state.answeredWrongOnce = false;
+
+  const h2 = document.createElement('h2');
+  h2.className='phase-title';
+  h2.innerText = isBoss ? ('⚔ ' + phase.bossChallenge.name) : phase.name;
+
+  const fairy = buildFairy();
+  if(isBoss){ fairy.style.filter = 'drop-shadow(0 0 10px #ff5d73)'; }
+
+  const speech = document.createElement('div');
+  speech.className='speech';
+  speech.innerHTML = '<span class="label">' + (isBoss ? '⚔ DESAFIO FINAL' : '✦ DESAFIO') + '</span>';
+  const p = document.createElement('div');
+  p.style.whiteSpace='pre-line';
+  p.innerText = challenge.prompt;
+  speech.appendChild(p);
+
+  const feedback = document.createElement('div');
+  feedback.className='speech';
+  feedback.style.display='none';
+  feedback.id='feedback';
+
+  const optionsWrap = document.createElement('div');
+  optionsWrap.className='options';
+
+  const shuffled = challenge.options.map((o,i)=>({...o, idx:i}));
+
+  shuffled.forEach(opt=>{
+    const b = document.createElement('button');
+    b.className='opt';
+    b.innerText = opt.text;
+    b.onclick = ()=> handleAnswer(opt, optionsWrap, feedback, challenge, isBoss);
+    optionsWrap.appendChild(b);
+  });
+
+  const ctaRow = document.createElement('div');
+  ctaRow.className='cta-row';
+  ctaRow.id='ctaRow';
+
+  content.appendChild(h2);
+  content.appendChild(fairy);
+  content.appendChild(speech);
+  content.appendChild(feedback);
+  content.appendChild(optionsWrap);
+  content.appendChild(ctaRow);
+}
+
+function handleAnswer(opt, optionsWrap, feedback, challenge, isBoss){
+  const buttons = [...optionsWrap.querySelectorAll('button.opt')];
+  buttons.forEach(b=> b.disabled = true);
+  const clicked = buttons.find(b=> b.innerText === opt.text);
+
+  feedback.style.display='block';
+
+  if(opt.correct){
+    clicked.classList.add('correct');
+    feedback.classList.add('ok');
+    feedback.classList.remove('danger');
+    feedback.innerHTML = '<span class="label">✔ MAGIA CERTA!</span>';
+    const p = document.createElement('div');
+    p.innerText = challenge.explain;
+    feedback.appendChild(p);
+
+    const ctaRow = document.getElementById('ctaRow');
+    ctaRow.innerHTML='';
+    const btn = document.createElement('button');
+    btn.className='cta';
+    btn.innerText='Continuar';
+    btn.onclick = ()=> advance(isBoss);
+    ctaRow.appendChild(btn);
+  } else {
+    clicked.classList.add('wrong');
+    feedback.classList.add('danger');
+    feedback.classList.remove('ok');
+    feedback.innerHTML = '<span class="label">✦ A MAGIA FALHOU...</span>';
+    const p = document.createElement('div');
+    p.innerText = challenge.explain;
+    feedback.appendChild(p);
+
+    if(state.hearts > 0) state.hearts--;
+    renderHearts();
+
+    const ctaRow = document.getElementById('ctaRow');
+    ctaRow.innerHTML='';
+    const btn = document.createElement('button');
+    btn.className='cta ghost';
+    btn.innerText='Tentar novamente';
+    btn.onclick = ()=>{
+      if(state.hearts <= 0){ state.hearts = 3; renderHearts(); }
+      buttons.forEach(b=>{ b.disabled=false; b.classList.remove('wrong','correct'); });
+      feedback.style.display='none';
+      ctaRow.innerHTML='';
+    };
+    ctaRow.appendChild(btn);
+    state.mistakesThisPhase++;
+  }
+}
+
+function advance(wasBoss){
+  const phase = PHASES[state.phaseIdx];
+  if(wasBoss){
+    state.screen = 'phaseEnd';
+    render();
+    return;
+  }
+  state.challengeIdx++;
+  if(state.challengeIdx >= phase.challenges.length){
+    if(phase.boss){
+      state.screen = 'boss';
+    } else {
+      state.screen = 'phaseEnd';
+    }
+  } else {
+    state.screen = 'challenge';
+  }
+  render();
+}
+
+/* ---------- PHASE END ---------- */
+function renderPhaseEnd(){
+  const phase = PHASES[state.phaseIdx];
+  hud.style.display='flex';
+  setScene(phase.scene);
+  spawnSparks();
+  renderHearts();
+  renderDots();
+  clear(content);
+  content.style.justifyContent='center';
+
+  const stars = Math.max(1, 3 - Math.min(2, state.mistakesThisPhase));
+
+  const h2 = document.createElement('h2');
+  h2.className='phase-title';
+  h2.innerText = 'FASE CONCLUÍDA!\n' + phase.name;
+  h2.style.whiteSpace='pre-line';
+
+  const fairy = buildFairy();
+  fairy.style.transform='scale(1.15)';
+
+  const starsRow = document.createElement('div');
+  starsRow.className='stars-row';
+  for(let i=0;i<3;i++){
+    const s = pixelDiv(STAR_ROWS, starColors(i < stars), 4);
+    s.classList.add('star');
+    starsRow.appendChild(s);
+  }
+
+  const lede = document.createElement('p');
+  lede.className='lede';
+  lede.innerText = phase.id < PHASES.length
+    ? 'A passagem se abre com um brilho dourado. O caminho continua...'
+    : 'A névoa se dissipa por completo. Ao longe, brilham as torres do Reino Mágico!';
+
+  const row = document.createElement('div');
+  row.className='cta-row';
+  const btn = document.createElement('button');
+  btn.className='cta';
+  btn.innerText = phase.id < PHASES.length ? 'Seguir viagem' : 'Chegar ao Reino';
+  btn.onclick = ()=>{
+    if(state.phaseIdx < PHASES.length - 1){
+      state.phaseIdx++;
+      state.screen = 'intro';
+    } else {
+      state.screen = 'victory';
+    }
+    render();
+  };
+  row.appendChild(btn);
+
+  content.appendChild(h2);
+  content.appendChild(fairy);
+  content.appendChild(starsRow);
+  content.appendChild(lede);
+  content.appendChild(row);
+}
+
+/* ---------- VICTORY ---------- */
+function renderVictory(){
+  hud.style.display='none';
+  setScene(['#4a2f7a','#ffb14e']);
+  spawnSparks();
+  clear(content);
+  content.style.justifyContent='center';
+
+  const h1 = document.createElement('h1');
+  h1.className='title';
+  h1.innerText = 'FAY CHEGOU AO\nREINO DAS FADAS!';
+  h1.style.whiteSpace='pre-line';
+
+  const fairy = buildFairy();
+  fairy.style.transform='scale(1.5)';
+  fairy.style.margin='14px auto';
+
+  const lede = document.createElement('p');
+  lede.className='lede';
+  lede.innerText = 'Com vírgulas no lugar certo, crases bem colocadas e frases limpas de vícios, Fay atravessou toda a Floresta Encantada. As fadas do reino celebram sua chegada!';
+
+  const row = document.createElement('div');
+  row.className='cta-row';
+  const btn = document.createElement('button');
+  btn.className='cta';
+  btn.innerText='Jogar novamente';
+  btn.onclick = ()=>{
+    state.phaseIdx=0; state.challengeIdx=0; state.hearts=3; state.mistakesThisPhase=0;
+    state.screen='title';
+    render();
+  };
+  row.appendChild(btn);
+
+  content.appendChild(h1);
+  content.appendChild(fairy);
+  content.appendChild(lede);
+  content.appendChild(row);
+}
+
+/* ---------- ROUTER ---------- */
+function render(){
+  if(state.screen === 'title') renderTitle();
+  else if(state.screen === 'intro') renderIntro();
+  else if(state.screen === 'challenge' || state.screen === 'boss') renderChallenge();
+  else if(state.screen === 'phaseEnd') renderPhaseEnd();
+  else if(state.screen === 'victory') renderVictory();
+}
+
+render();
+</script>
+</body>
+</html>

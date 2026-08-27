@@ -5,7 +5,7 @@ Aplicação web interativa criada para resolver um desafio real de aprendizagem:
 
 O objetivo principal deste repositório é demonstrar o ciclo de **Engenharia de Prompt, visão de produto e prototipagem assistida por IA**, utilizando o modelo **Anthropic Claude** como ferramenta central no desenvolvimento da solução sem a escrita manual de código do zero.
 
-🔗 **Acesse e jogue online:** [CLIQUE AQUI PARA JOGAR](https://sarahgarcia.github.io/ai-assisted-game/)
+🔗 **Acesse e jogue online:** [CLIQUE AQUI PARA JOGAR](https://sarahgarciac.github.io/ai-assisted-game/)
 
 ## 🧠 Meu Papel: 
 Atuei no ciclo completo de idealização e especificação da solução:
